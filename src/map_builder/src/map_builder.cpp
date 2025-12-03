@@ -24,7 +24,7 @@ MapBuilder::MapBuilder()
   // initialize global pointcloud subscriber
   global_pointcloud_subscriber =
       this->create_subscription<sensor_msgs::msg::PointCloud2>(
-          "/global_pointcloud", 1,
+          "/global_env", 1,
           std::bind(&MapBuilder::globalCloudCallback, this,
                     std::placeholders::_1));
 
