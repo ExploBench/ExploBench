@@ -1,8 +1,8 @@
-# ExploEnv
+# ExploBench
 
-This repository contains the basic environment code for autonomous exploration.
+This repository contains code of different algorithms for autonomous exploration.
 
-## Topics You May Use
+## For Developers
 
 * `/visible_map`: the current mapping result.
 * `/ground_truth`: the actual underlying world without sensor noise or occlusion.
@@ -10,3 +10,10 @@ This repository contains the basic environment code for autonomous exploration.
 * `/av1/cmd_vel`: the twist of robot.
 
 It is suggested to put all robot-related topic into `av1` namespace.
+
+## Algorithms
+
+Currently, two algorithms are developed.
+
+* `find_nearest`: greedy algorithm, which assigns the nearest frontier to robot.
+* `nbvplanner`: sampling-based algorithm, maintaining a RRT and selecting one frontier each time
