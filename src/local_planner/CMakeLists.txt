@@ -9,7 +9,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(prob_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
@@ -34,11 +33,6 @@ add_executable(path_tracker_node
   src/path_tracker_node.cpp
 )
 
-add_executable(path_selector_node
-  src/path_selector.cpp
-  src/path_selector_node.cpp
-)
-
 ament_target_dependencies(path_tracker_node
   geometry_msgs
   rclcpp
@@ -48,19 +42,7 @@ ament_target_dependencies(path_tracker_node
   visualization_msgs
 )
 
-ament_target_dependencies(path_selector_node
-  geometry_msgs
-  nav_msgs
-  prob_msgs
-  rclcpp
-)
-
 install(TARGETS
   path_tracker_node
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(TARGETS
-  path_selector_node
   DESTINATION lib/${PROJECT_NAME}
 )
