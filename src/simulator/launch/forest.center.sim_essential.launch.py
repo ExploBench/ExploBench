@@ -17,7 +17,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
-                        "pointcloud_file": "pcd/forest.pcd",
+                        "pointcloud_file": "env/forest.pcd",
                         "local_radius": 20.0,
                         "scan_resolution": 10.0,
                         "sample_step": 2.0,

@@ -17,7 +17,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
-                        "pointcloud_file": "ply/indoor2.ply",
+                        "pointcloud_file": "env/indoor2.ply",
                         "local_radius": 20.0,
                         "scan_resolution": 10.0,
                         "sample_step": 2.0,
