@@ -24,7 +24,7 @@ PLYPublisher::PLYPublisher() : Node("pointcloud_publisher") {
   std::string absolute_path;
   try {
     absolute_path = ament_index_cpp::get_package_share_directory(package) +
-                    "/mp3d/" + pointcloud_file;
+                    "/" + pointcloud_file;
   } catch (const std::exception &e) {
     RCLCPP_ERROR(this->get_logger(), "Package %s not found: %s",
                  package.c_str(), e.what());
