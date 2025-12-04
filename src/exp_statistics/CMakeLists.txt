@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 
 if(BUILD_TESTING)
@@ -31,6 +32,7 @@ add_executable(exp_statistics_node
 ament_target_dependencies(exp_statistics_node
   rclcpp
   nav_msgs
+  visualization_msgs
 )
 
 install(TARGETS
