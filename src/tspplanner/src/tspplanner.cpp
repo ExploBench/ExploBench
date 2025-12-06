@@ -193,6 +193,7 @@ bool TSPPlanner::isFrontier(const std::vector<signed char> &map_data, int x,
 
   // count unknown neighbors (need at least 2)
   int unknown_count = 0;
+  // Also check 8-connected neighbors more carefully
   for (int dy = -1; dy <= 1; dy++) {
     for (int dx = -1; dx <= 1; dx++) {
       if (dx == 0 && dy == 0)
@@ -209,6 +210,25 @@ bool TSPPlanner::isFrontier(const std::vector<signed char> &map_data, int x,
     }
   }
   // need at least 2 unknown neighbors
+  // Also check if there are obstacles nearby (to avoid frontiers too close to walls)
+  int obstacle_count = 0;
+  for (int dy = -1; dy <= 1; dy++) {
+    for (int dx = -1; dx <= 1; dx++) {
+      if (dx == 0 && dy == 0) continue;
+      int nx = x + dx;
+      int ny = y + dy;
+      int nidx = ny * width + nx;
+      if (nidx >= 0 && nidx < static_cast<int>(map_data.size()) &&
+          map_data[nidx] >= 50) {
+        obstacle_count++;
+      }
+    }
+  }
+  // If surrounded by too many obstacles, it's not a good frontier
+  if (obstacle_count >= 5) {
+    return false;
+  }
+  
   return unknown_count >= 2;
 }
 
@@ -261,53 +281,68 @@ TSPPlanner::clusterFrontiers(const std::vector<Point2D> &raw_frontiers,
   return clustered_frontiers;
 }
 
+// Helper function to check if a point is safe (not in obstacle and not too close)
+bool TSPPlanner::isPointSafe(int x, int y, int safety_dist) {
+  // Boundary check
+  if (x < 0 || x >= width || y < 0 || y >= height) {
+    return false;
+  }
+  
+  // Check if point itself is in obstacle
+  int idx = y * width + x;
+  if (idx < 0 || idx >= static_cast<int>(visible.data.size()) ||
+      visible.data[idx] >= 50) {
+    return false; // In obstacle
+  }
+  
+  // Check safety distance - look for obstacles in surrounding area
+  for (int dy = -safety_dist; dy <= safety_dist; dy++) {
+    for (int dx = -safety_dist; dx <= safety_dist; dx++) {
+      if (dx == 0 && dy == 0) continue;
+      
+      int nx = x + dx;
+      int ny = y + dy;
+      if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+      
+      int nidx = ny * width + nx;
+      if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
+          visible.data[nidx] >= 50) {
+        double dist = std::hypot(dx, dy);
+        if (dist < safety_dist) {
+          return false; // Too close to obstacle
+        }
+      }
+    }
+  }
+  
+  return true; // Safe
+}
+
 void TSPPlanner::moveFrontiersAwayFromObstacle() {
   std::vector<Point2D> new_frontiers;
-  const int safety_distance = 3; // cells away from obstacles
+  const int safety_distance = 4; // cells away from obstacles (increased from 3)
 
   for (const auto &pt : frontiers) {
     int x = pt.x;
     int y = pt.y;
     
-    // Check if current position is in obstacle or too close
-    int idx = y * width + x;
-    if (idx < 0 || idx >= static_cast<int>(visible.data.size()) ||
-        visible.data[idx] >= 50) {
-      // Already in obstacle, need to move
-    } else {
-      // Check safety distance - look for obstacles in surrounding area
-      bool too_close = false;
-      for (int dy = -safety_distance; dy <= safety_distance && !too_close; dy++) {
-        for (int dx = -safety_distance; dx <= safety_distance && !too_close; dx++) {
-          int nx = x + dx;
-          int ny = y + dy;
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-          
-          int nidx = ny * width + nx;
-          if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
-              visible.data[nidx] >= 50) {
-            double dist = std::hypot(dx, dy);
-            if (dist < safety_distance) {
-              too_close = true;
-            }
-          }
-        }
-      }
-      
-      if (!too_close) {
-        // Safe position, keep it
-        new_frontiers.push_back(pt);
-        continue;
-      }
+    // First check if current position is safe
+    if (isPointSafe(x, y, safety_distance)) {
+      // Safe position, keep it
+      new_frontiers.push_back(pt);
+      continue;
     }
 
-    // Need to move away from obstacles
+    // Need to move away from obstacles - try multiple strategies
+    bool found_safe = false;
+    
+    // Strategy 1: Move in direction away from nearest obstacles
     Point2D shift_direction{0, 0};
-    int obstacle_count = 0;
-
-    // Check larger area for obstacles to determine shift direction
-    for (int dy = -safety_distance; dy <= safety_distance; dy++) {
-      for (int dx = -safety_distance; dx <= safety_distance; dx++) {
+    double min_obstacle_dist = std::numeric_limits<double>::max();
+    
+    // Find direction away from nearest obstacles
+    for (int dy = -safety_distance * 2; dy <= safety_distance * 2; dy++) {
+      for (int dx = -safety_distance * 2; dx <= safety_distance * 2; dx++) {
         if (dx == 0 && dy == 0) continue;
         
         int nx = x + dx;
@@ -317,85 +352,81 @@ void TSPPlanner::moveFrontiersAwayFromObstacle() {
         int nidx = ny * width + nx;
         if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
             visible.data[nidx] >= 50) {
-          obstacle_count++;
-          // Shift away from obstacle
           double dist = std::hypot(dx, dy);
-          if (dist > 0) {
-            shift_direction.x -= static_cast<int>(std::round(dx / dist));
-            shift_direction.y -= static_cast<int>(std::round(dy / dist));
-          }
-        }
-      }
-    }
-
-    if (obstacle_count == 0) {
-      // No obstacles nearby, keep original position
-      new_frontiers.push_back(pt);
-      continue;
-    }
-
-    // Normalize shift direction
-    double magnitude = std::hypot(shift_direction.x, shift_direction.y);
-    if (magnitude > 0) {
-      shift_direction.x = static_cast<int>(std::round(shift_direction.x / magnitude));
-      shift_direction.y = static_cast<int>(std::round(shift_direction.y / magnitude));
-    } else {
-      // Default shift direction
-      shift_direction = {1, 0};
-    }
-
-    // Find valid position by shifting
-    int new_x = x, new_y = y;
-    bool valid_position = false;
-
-    for (int step = 1; step <= safety_distance * 2; ++step) {
-      new_x = x + step * shift_direction.x;
-      new_y = y + step * shift_direction.y;
-
-      if (new_x < 0 || new_x >= width || new_y < 0 || new_y >= height) {
-        break;
-      }
-
-      int new_idx = new_y * width + new_x;
-      if (new_idx < 0 || new_idx >= static_cast<int>(visible.data.size()) ||
-          visible.data[new_idx] >= 50) {
-        continue; // Still in obstacle
-      }
-
-      // Check if new position is safe (no obstacles within safety_distance)
-      bool safe = true;
-      for (int dy = -safety_distance; dy <= safety_distance && safe; dy++) {
-        for (int dx = -safety_distance; dx <= safety_distance && safe; dx++) {
-          int nx = new_x + dx;
-          int ny = new_y + dy;
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-          
-          int nidx = ny * width + nx;
-          if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
-              visible.data[nidx] >= 50) {
-            double dist = std::hypot(dx, dy);
-            if (dist < safety_distance) {
-              safe = false;
+          if (dist < min_obstacle_dist) {
+            min_obstacle_dist = dist;
+            // Direction away from obstacle
+            if (dist > 0) {
+              shift_direction.x = static_cast<int>(std::round(-dx / dist));
+              shift_direction.y = static_cast<int>(std::round(-dy / dist));
             }
           }
         }
       }
+    }
 
-      if (safe) {
-        valid_position = true;
-        break;
+    // Try moving in shift direction
+    if (shift_direction.x != 0 || shift_direction.y != 0) {
+      for (int step = 1; step <= safety_distance * 3; ++step) {
+        int new_x = x + step * shift_direction.x;
+        int new_y = y + step * shift_direction.y;
+        
+        if (isPointSafe(new_x, new_y, safety_distance)) {
+          new_frontiers.push_back({new_x, new_y});
+          found_safe = true;
+          break;
+        }
       }
     }
 
-    if (valid_position) {
-      new_frontiers.push_back({new_x, new_y});
-    } else {
+    // Strategy 2: If shift direction didn't work, try spiral search
+    if (!found_safe) {
+      for (int radius = 1; radius <= safety_distance * 2 && !found_safe; radius++) {
+        for (int angle = 0; angle < 360 && !found_safe; angle += 15) {
+          double rad = angle * M_PI / 180.0;
+          int new_x = x + static_cast<int>(std::round(radius * std::cos(rad)));
+          int new_y = y + static_cast<int>(std::round(radius * std::sin(rad)));
+          
+          if (isPointSafe(new_x, new_y, safety_distance)) {
+            new_frontiers.push_back({new_x, new_y});
+            found_safe = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // Strategy 3: Try 8-directional search
+    if (!found_safe) {
+      std::vector<std::pair<int, int>> directions = {
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+        {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
+      };
+      
+      for (int step = 1; step <= safety_distance * 2 && !found_safe; step++) {
+        for (const auto &dir : directions) {
+          int new_x = x + step * dir.first;
+          int new_y = y + step * dir.second;
+          
+          if (isPointSafe(new_x, new_y, safety_distance)) {
+            new_frontiers.push_back({new_x, new_y});
+            found_safe = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!found_safe) {
       RCLCPP_DEBUG(
           this->get_logger(),
           "Could not move frontier (%d,%d) away from obstacles. Discard.", x,
           y);
     }
   }
+  
+  RCLCPP_INFO(this->get_logger(), "Moved frontiers: %zu -> %zu (safety distance: %d)",
+              frontiers.size(), new_frontiers.size(), safety_distance);
   frontiers = new_frontiers;
 }
 
@@ -475,8 +506,27 @@ bool TSPPlanner::aStarSearch(int start_x, int start_y, int goal_x, int goal_y,
         continue;
       }
 
-      if (visible_cost.data[idx] >= 80 || visible.data[idx] < 0) {
-        continue; // high cost or unknown
+      // Check obstacle with safety margin
+      if (visible.data[idx] >= 50 || visible.data[idx] < 0) {
+        continue; // obstacle or unknown
+      }
+      
+      // Additional safety check: ensure cell is not too close to obstacles
+      bool too_close_to_obstacle = false;
+      for (int check_dy = -1; check_dy <= 1 && !too_close_to_obstacle; check_dy++) {
+        for (int check_dx = -1; check_dx <= 1 && !too_close_to_obstacle; check_dx++) {
+          int check_x = nx + check_dx;
+          int check_y = ny + check_dy;
+          if (check_x < 0 || check_x >= width || check_y < 0 || check_y >= height) continue;
+          int check_idx = check_y * width + check_x;
+          if (check_idx >= 0 && check_idx < static_cast<int>(visible.data.size()) &&
+              visible.data[check_idx] >= 50) {
+            too_close_to_obstacle = true;
+          }
+        }
+      }
+      if (too_close_to_obstacle) {
+        continue; // too close to obstacle
       }
 
       // diagonal movement validation
@@ -741,7 +791,41 @@ std::vector<Point2D> TSPPlanner::buildPathFromTSP() {
     if (aStarSearch(current.x, current.y, frontier.x, frontier.y, segment)) {
       // Skip first point to avoid duplication
       if (!segment.empty() && segment.size() > 1) {
-        full_path.insert(full_path.end(), segment.begin() + 1, segment.end());
+        // Smooth path: remove points that are too close to obstacles
+        std::vector<Point2D> safe_segment;
+        for (size_t i = 0; i < segment.size(); ++i) {
+          const auto &pt = segment[i];
+          // Check if point is safe (not too close to obstacles)
+          bool safe = true;
+          int pt_idx = pt.y * width + pt.x;
+          if (pt_idx >= 0 && pt_idx < static_cast<int>(visible.data.size())) {
+            // Check immediate neighbors
+            for (int dy = -1; dy <= 1 && safe; dy++) {
+              for (int dx = -1; dx <= 1 && safe; dx++) {
+                int nx = pt.x + dx;
+                int ny = pt.y + dy;
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+                int nidx = ny * width + nx;
+                if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
+                    visible.data[nidx] >= 50) {
+                  safe = false;
+                }
+              }
+            }
+          }
+          
+          if (safe || i == 0 || i == segment.size() - 1) {
+            // Keep safe points and endpoints
+            safe_segment.push_back(pt);
+          }
+        }
+        
+        if (safe_segment.size() > 1) {
+          full_path.insert(full_path.end(), safe_segment.begin() + 1, safe_segment.end());
+        } else if (safe_segment.size() == 1 && 
+                   (safe_segment[0].x != current.x || safe_segment[0].y != current.y)) {
+          full_path.push_back(safe_segment[0]);
+        }
       } else if (segment.size() == 1 && 
                  (segment[0].x != current.x || segment[0].y != current.y)) {
         full_path.push_back(segment[0]);
