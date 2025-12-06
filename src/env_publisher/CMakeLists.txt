@@ -32,7 +32,16 @@ add_executable(ply_publisher_node
   src/ply_publisher_node.cpp
 )
 
+add_executable(pcd_publisher_node 
+  src/pcd_publisher.cpp 
+  src/pcd_publisher_node.cpp
+)
+
 target_include_directories(ply_publisher_node PUBLIC
+  ${PCL_INCLUDE_DIRS}
+)
+
+target_include_directories(pcd_publisher_node PUBLIC
   ${PCL_INCLUDE_DIRS}
 )
 
@@ -40,7 +49,18 @@ target_link_libraries(ply_publisher_node
   ${PCL_LIBRARIES}
 )
 
+target_link_libraries(pcd_publisher_node
+  ${PCL_LIBRARIES}
+)
+
 ament_target_dependencies(ply_publisher_node 
+  sensor_msgs
+  rclcpp
+  pcl_conversions
+  nav_msgs
+)
+
+ament_target_dependencies(pcd_publisher_node 
   sensor_msgs
   rclcpp
   pcl_conversions
@@ -53,5 +73,10 @@ install(DIRECTORY env
 
 install(TARGETS
   ply_publisher_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS
+  pcd_publisher_node
   DESTINATION lib/${PROJECT_NAME}
 )
