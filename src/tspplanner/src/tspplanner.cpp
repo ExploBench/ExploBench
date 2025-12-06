@@ -263,69 +263,137 @@ TSPPlanner::clusterFrontiers(const std::vector<Point2D> &raw_frontiers,
 
 void TSPPlanner::moveFrontiersAwayFromObstacle() {
   std::vector<Point2D> new_frontiers;
+  const int safety_distance = 3; // cells away from obstacles
 
   for (const auto &pt : frontiers) {
     int x = pt.x;
     int y = pt.y;
-    int obstacle_count = 0;
-    Point2D shift_direction{0, 0};
-
-    // check 8 neighbors for obstacles
-    for (const auto &dir : neighbor_dirs) {
-      int nx = x + dir.first;
-      int ny = y + dir.second;
-
-      if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
-        continue;
+    
+    // Check if current position is in obstacle or too close
+    int idx = y * width + x;
+    if (idx < 0 || idx >= static_cast<int>(visible.data.size()) ||
+        visible.data[idx] >= 50) {
+      // Already in obstacle, need to move
+    } else {
+      // Check safety distance - look for obstacles in surrounding area
+      bool too_close = false;
+      for (int dy = -safety_distance; dy <= safety_distance && !too_close; dy++) {
+        for (int dx = -safety_distance; dx <= safety_distance && !too_close; dx++) {
+          int nx = x + dx;
+          int ny = y + dy;
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+          
+          int nidx = ny * width + nx;
+          if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
+              visible.data[nidx] >= 50) {
+            double dist = std::hypot(dx, dy);
+            if (dist < safety_distance) {
+              too_close = true;
+            }
+          }
+        }
       }
-
-      int idx = ny * width + nx;
-      if (idx >= 0 && idx < static_cast<int>(visible.data.size()) &&
-          visible.data[idx] >= 50) { // obstacle threshold
-        obstacle_count++;
-        shift_direction.x -= dir.first;
-        shift_direction.y -= dir.second;
+      
+      if (!too_close) {
+        // Safe position, keep it
+        new_frontiers.push_back(pt);
+        continue;
       }
     }
 
-    // if surrounded by 3+ obstacles, shift away
-    if (obstacle_count >= 3) {
-      double magnitude = std::hypot(shift_direction.x, shift_direction.y);
-      if (magnitude > 0) {
-        shift_direction.x = std::round(shift_direction.x / magnitude);
-        shift_direction.y = std::round(shift_direction.y / magnitude);
-      }
+    // Need to move away from obstacles
+    Point2D shift_direction{0, 0};
+    int obstacle_count = 0;
 
-      // find valid position by shifting
-      int new_x = x, new_y = y;
-      bool valid_position = false;
+    // Check larger area for obstacles to determine shift direction
+    for (int dy = -safety_distance; dy <= safety_distance; dy++) {
+      for (int dx = -safety_distance; dx <= safety_distance; dx++) {
+        if (dx == 0 && dy == 0) continue;
+        
+        int nx = x + dx;
+        int ny = y + dy;
+        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
 
-      for (int step = 1; step <= 5; ++step) {
-        new_x = x + step * shift_direction.x;
-        new_y = y + step * shift_direction.y;
-
-        if (new_x < 0 || new_x >= width || new_y < 0 || new_y >= height) {
-          break;
-        }
-
-        int new_idx = new_y * width + new_x;
-        if (new_idx >= 0 && new_idx < static_cast<int>(visible.data.size()) &&
-            visible.data[new_idx] == 0) {
-          valid_position = true;
-          break;
+        int nidx = ny * width + nx;
+        if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
+            visible.data[nidx] >= 50) {
+          obstacle_count++;
+          // Shift away from obstacle
+          double dist = std::hypot(dx, dy);
+          if (dist > 0) {
+            shift_direction.x -= static_cast<int>(std::round(dx / dist));
+            shift_direction.y -= static_cast<int>(std::round(dy / dist));
+          }
         }
       }
+    }
 
-      if (valid_position) {
-        new_frontiers.push_back({new_x, new_y});
-      } else {
-        RCLCPP_DEBUG(
-            this->get_logger(),
-            "Could not move frontier (%d,%d) away from obstacles. Discard.", x,
-            y);
-      }
-    } else {
+    if (obstacle_count == 0) {
+      // No obstacles nearby, keep original position
       new_frontiers.push_back(pt);
+      continue;
+    }
+
+    // Normalize shift direction
+    double magnitude = std::hypot(shift_direction.x, shift_direction.y);
+    if (magnitude > 0) {
+      shift_direction.x = static_cast<int>(std::round(shift_direction.x / magnitude));
+      shift_direction.y = static_cast<int>(std::round(shift_direction.y / magnitude));
+    } else {
+      // Default shift direction
+      shift_direction = {1, 0};
+    }
+
+    // Find valid position by shifting
+    int new_x = x, new_y = y;
+    bool valid_position = false;
+
+    for (int step = 1; step <= safety_distance * 2; ++step) {
+      new_x = x + step * shift_direction.x;
+      new_y = y + step * shift_direction.y;
+
+      if (new_x < 0 || new_x >= width || new_y < 0 || new_y >= height) {
+        break;
+      }
+
+      int new_idx = new_y * width + new_x;
+      if (new_idx < 0 || new_idx >= static_cast<int>(visible.data.size()) ||
+          visible.data[new_idx] >= 50) {
+        continue; // Still in obstacle
+      }
+
+      // Check if new position is safe (no obstacles within safety_distance)
+      bool safe = true;
+      for (int dy = -safety_distance; dy <= safety_distance && safe; dy++) {
+        for (int dx = -safety_distance; dx <= safety_distance && safe; dx++) {
+          int nx = new_x + dx;
+          int ny = new_y + dy;
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+          
+          int nidx = ny * width + nx;
+          if (nidx >= 0 && nidx < static_cast<int>(visible.data.size()) &&
+              visible.data[nidx] >= 50) {
+            double dist = std::hypot(dx, dy);
+            if (dist < safety_distance) {
+              safe = false;
+            }
+          }
+        }
+      }
+
+      if (safe) {
+        valid_position = true;
+        break;
+      }
+    }
+
+    if (valid_position) {
+      new_frontiers.push_back({new_x, new_y});
+    } else {
+      RCLCPP_DEBUG(
+          this->get_logger(),
+          "Could not move frontier (%d,%d) away from obstacles. Discard.", x,
+          y);
     }
   }
   frontiers = new_frontiers;
@@ -477,10 +545,38 @@ void TSPPlanner::buildCostMatrix() {
     return;
   }
 
+  // First, filter out unreachable frontiers from robot position
+  std::vector<Point2D> reachable_frontiers;
+  std::vector<size_t> frontier_indices; // Map from reachable_frontiers index to original frontiers index
+  
+  for (size_t i = 0; i < frontiers.size(); ++i) {
+    std::vector<Point2D> test_path;
+    if (aStarSearch(robot_grid_pos.x, robot_grid_pos.y, frontiers[i].x,
+                    frontiers[i].y, test_path)) {
+      if (test_path.size() > 1) { // Must have at least 2 points (start != goal)
+        reachable_frontiers.push_back(frontiers[i]);
+        frontier_indices.push_back(i);
+      }
+    }
+  }
+
+  if (reachable_frontiers.empty()) {
+    RCLCPP_WARN(this->get_logger(), "No reachable frontiers found");
+    cost_matrix.clear();
+    frontiers.clear(); // Clear unreachable frontiers
+    return;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Filtered %zu reachable frontiers from %zu total",
+              reachable_frontiers.size(), frontiers.size());
+
+  // Update frontiers to only include reachable ones
+  frontiers = reachable_frontiers;
+
   // Include robot position as the first node (index 0)
   std::vector<Point2D> all_nodes;
   all_nodes.push_back(robot_grid_pos);
-  all_nodes.insert(all_nodes.end(), frontiers.begin(), frontiers.end());
+  all_nodes.insert(all_nodes.end(), reachable_frontiers.begin(), reachable_frontiers.end());
 
   size_t n = all_nodes.size();
   cost_matrix.clear();
@@ -498,12 +594,11 @@ void TSPPlanner::buildCostMatrix() {
         cost_matrix[i][j] = cost;
         cost_matrix[j][i] = cost;
       } else {
-        // If no path found, use Euclidean distance as fallback (but mark as
-        // very high cost)
+        // If no path found between reachable nodes, use very high cost
         double euclidean = std::hypot(all_nodes[i].x - all_nodes[j].x,
                                       all_nodes[i].y - all_nodes[j].y);
-        cost_matrix[i][j] = euclidean * 1000.0; // penalty for unreachable
-        cost_matrix[j][i] = euclidean * 1000.0;
+        cost_matrix[i][j] = euclidean * 10000.0; // Very high penalty
+        cost_matrix[j][i] = euclidean * 10000.0;
         RCLCPP_WARN(this->get_logger(),
                     "No path between nodes %zu and %zu, using penalty cost",
                     i, j);
@@ -625,22 +720,30 @@ bool TSPPlanner::solveTSP() {
 
 std::vector<Point2D> TSPPlanner::buildPathFromTSP() {
   std::vector<Point2D> full_path;
+  
+  if (tsp_ordered_frontiers.empty()) {
+    RCLCPP_WARN(this->get_logger(), "No frontiers in TSP solution");
+    return full_path;
+  }
+
   full_path.push_back(robot_grid_pos);
 
   // Build path connecting all TSP-ordered frontiers
   for (const auto &frontier : tsp_ordered_frontiers) {
-    if (full_path.empty()) {
-      full_path.push_back(frontier);
+    Point2D current = full_path.back();
+    
+    // Skip if already at this frontier
+    if (current.x == frontier.x && current.y == frontier.y) {
       continue;
     }
-
-    Point2D current = full_path.back();
+    
     std::vector<Point2D> segment;
     if (aStarSearch(current.x, current.y, frontier.x, frontier.y, segment)) {
       // Skip first point to avoid duplication
       if (!segment.empty() && segment.size() > 1) {
         full_path.insert(full_path.end(), segment.begin() + 1, segment.end());
-      } else if (segment.size() == 1) {
+      } else if (segment.size() == 1 && 
+                 (segment[0].x != current.x || segment[0].y != current.y)) {
         full_path.push_back(segment[0]);
       }
     } else {
@@ -648,6 +751,12 @@ std::vector<Point2D> TSPPlanner::buildPathFromTSP() {
                   "Failed to find path to frontier (%d,%d), skipping",
                   frontier.x, frontier.y);
     }
+  }
+
+  if (full_path.size() <= 1) {
+    RCLCPP_WARN(this->get_logger(), 
+                "Path has only %zu waypoints, may not be valid", 
+                full_path.size());
   }
 
   return full_path;
