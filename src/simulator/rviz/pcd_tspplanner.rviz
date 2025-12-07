@@ -5,8 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /PointCloud21
-        - /Marker2/Namespaces1
         - /Odometry1/Shape1
       Splitter Ratio: 0.5
     Tree Height: 751
@@ -28,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -72,7 +70,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.009999999776482582
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -80,7 +78,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /global_env
+        Value: /global_pointcloud
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -196,7 +194,7 @@ Visualization Manager:
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
       Line Style: Billboards
-      Line Width: 0.5
+      Line Width: 0.1
       Name: Path
       Offset:
         X: 0
@@ -258,7 +256,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 2
+      Size (m): 0.25
       Style: Spheres
       Topic:
         Depth: 5
@@ -316,16 +314,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 250.55319213867188
+      Distance: 164.23936462402344
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.4511736631393433
-        Y: 1.1837518215179443
-        Z: -0.35299068689346313
+        X: -0.15430843830108643
+        Y: 0.8889725208282471
+        Z: -0.3532836437225342
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -334,7 +332,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 4.70837926864624
+      Yaw: 4.713379859924316
     Saved: ~
 Window Geometry:
   Displays:

@@ -5,8 +5,8 @@ import math
 
 
 def generate_launch_description():
-    height = 2.0
-    resolution = 1.0
+    height = 1.0
+    resolution = 0.5
 
     return LaunchDescription(
         [
@@ -39,7 +39,7 @@ def generate_launch_description():
                         "size_y": 101.0,
                         "height": height,
                         "num_rays": 80.0,
-                        "max_range": 8.0,
+                        "max_range": 20.0,
                     }
                 ],
             ),
