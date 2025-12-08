@@ -51,9 +51,9 @@ NBVPlanner::NBVPlanner() : Node("nbvplanner"), traversable_space(0, 0, 0, 0) {
   // parameters
   // meters
   step_size = 2;
-  max_iterations = 1000;
-  max_nodes = 500;
-  N_tol = 1000;
+  max_iterations = 3000;
+  max_nodes = 1500;
+  N_tol = 1500;
 
   // tree visualization
   tree_pub = this->create_publisher<visualization_msgs::msg::Marker>(
@@ -181,7 +181,7 @@ void NBVPlanner::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     double time_since_check = (this->now() - last_check_time).seconds();
     if (time_since_check > 2.0) {
       double dist = (robot_position - last_check_pos).norm();
-      if (!rrt_path.poses.empty() && dist < 0.05) { // 阈值设为0.15米
+      if (!rrt_path.poses.empty() && dist < 0.05) {
         RCLCPP_WARN(this->get_logger(),
                     "Robot stuck (moved %.2fm in %.1fs). Triggering replan.",
                     dist, time_since_check);
@@ -637,7 +637,7 @@ double NBVPlanner::computeGain(const Eigen::Vector3d &point) {
   }
   double distance_penalty_coefficient = -0.075; // -0.05
   double distance = (point - robot_position).norm();
-  return total_gain * exp(distance_penalty_coefficient * distance);
+  return total_gain * exp(distance_penalty_coefficient * distance) * 50;
 }
 
 Eigen::Vector3d NBVPlanner::steer(const Eigen::Vector3d &from,
