@@ -6,7 +6,7 @@ import math
 
 def generate_launch_description():
     height = 1.0
-    resolution = 0.5
+    resolution = 1.0
 
     return LaunchDescription(
         [
