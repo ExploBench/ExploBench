@@ -16,7 +16,7 @@ def generate_launch_description():
     rviz_config_file = os.path.join(
         simulator_share,
         'rviz',
-        'pcd_tspplanner.rviz'
+        'mp3d_find_nearest.rviz'
     )
 
     return LaunchDescription(
