@@ -47,3 +47,4 @@ log/
 
 # planning env
 *.ply
+*.pcd
