@@ -10,7 +10,7 @@ def generate_launch_description():
     simulator_share = get_package_share_directory('simulator')
     essential_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(simulator_share, 'launch', 'me467.corner.sim_essential.launch.py')
+            os.path.join(simulator_share, 'launch', 'puzzle.center.sim_essential.launch.py')
         )
     )
     rviz_config_file = os.path.join(
@@ -47,7 +47,7 @@ def generate_launch_description():
                             "src",
                             "simulator",
                             "statistics",
-                            "me467",
+                            "puzzle",
                             f"find_nearest_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                         )
                     }
