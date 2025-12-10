@@ -74,6 +74,12 @@ def generate_launch_description():
                         "max_angular_velocity": 1.0,
                     }
                 ],
+            ),
+            Node(
+                package="map_builder",
+                executable="pointcloud_accumulator_node",
+                name="pointcloud_accumulator",
+                output="screen"
             )
         ]
     )

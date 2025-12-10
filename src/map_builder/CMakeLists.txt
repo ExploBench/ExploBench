@@ -13,7 +13,7 @@ find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
-find_package(PCL REQUIRED COMPONENTS common io)
+find_package(PCL REQUIRED COMPONENTS common io filters)
 find_package(octomap_msgs REQUIRED)
 find_package(octomap REQUIRED)
 find_package(octomap_ros REQUIRED)
@@ -54,7 +54,22 @@ ament_target_dependencies(map_builder_node
   octomap_msgs
 )
 
+add_executable(pointcloud_accumulator_node
+  src/pointcloud_accumulator.cpp
+)
+
+target_link_libraries(pointcloud_accumulator_node
+  ${PCL_LIBRARIES}
+)
+
+ament_target_dependencies(pointcloud_accumulator_node
+  sensor_msgs
+  rclcpp
+  pcl_conversions
+)
+
 install(TARGETS
   map_builder_node
+  pointcloud_accumulator_node
   DESTINATION lib/${PROJECT_NAME}
 )

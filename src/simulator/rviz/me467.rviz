@@ -5,8 +5,10 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /PointCloud21
+        - /Marker2/Namespaces1
         - /Odometry1/Shape1
-        - /Path2
+        - /OccupancyGrid1
       Splitter Ratio: 0.5
     Tree Height: 751
   - Class: rviz_common/Selection
@@ -58,10 +60,10 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz_default_plugins/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color: 255; 120; 0
+      Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -71,7 +73,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
+      Size (m): 0.10000000149011612
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -79,15 +81,15 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /global_pointcloud
+        Value: /accumulated_pointcloud
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: true
+      Enabled: false
       Name: Marker
       Namespaces:
-        av1_marker: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -95,12 +97,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /av1/vehicle_marker
-      Value: true
+      Value: false
     - Alpha: 0.699999988079071
       Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic:
         Depth: 5
@@ -116,7 +118,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /visible_map_updates
       Use Timestamp: false
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/Marker
       Enabled: true
       Name: Marker
@@ -147,7 +149,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Keep: 1
       Name: Odometry
       Position Tolerance: 0.009999999776482582
@@ -168,7 +170,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /av1/odom
-      Value: true
+      Value: false
     - Class: octomap_rviz_plugins/OccupancyGrid
       Enabled: false
       Max. Height Display: 3.4028234663852886e+38
@@ -181,21 +183,21 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /ground_truth_octomap
+        Value: /visible_octomap
       Value: false
       Voxel Alpha: 0.8999999761581421
-      Voxel Coloring: Z-Axis
+      Voxel Coloring: Cell Probability
       Voxel Rendering: Occupied Voxels
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 255; 163; 72
-      Enabled: true
+      Enabled: false
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
       Line Style: Billboards
-      Line Width: 0.05000000074505806
+      Line Width: 0.5
       Name: Path
       Offset:
         X: 0
@@ -213,12 +215,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /av1/planned_path
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz_default_plugins/Map
       Color Scheme: costmap
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic:
         Depth: 5
@@ -234,7 +236,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /ground_truth_updates
       Use Timestamp: false
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -247,7 +249,7 @@ Visualization Manager:
       Color: 87; 227; 137
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -257,7 +259,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.25
+      Size (m): 2
       Style: Spheres
       Topic:
         Depth: 5
@@ -268,127 +270,10 @@ Visualization Manager:
         Value: /frontiers_cloud
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
-    - Alpha: 0.30000001192092896
-      Class: rviz_default_plugins/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /predicted_map
-      Update Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /predicted_map_updates
-      Use Timestamp: false
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz_default_plugins/PointCloud2
-      Color: 87; 227; 137
-      Color Transformer: FlatColor
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 4096
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.30000001192092896
-      Style: Spheres
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /local_frontiers
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz_default_plugins/PointCloud2
-      Color: 98; 160; 234
-      Color Transformer: FlatColor
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 4096
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.30000001192092896
-      Style: Spheres
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /global_frontiers
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz_default_plugins/Path
-      Color: 165; 29; 45
-      Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Billboards
-      Line Width: 0.05000000074505806
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /av1/solution_path
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 255; 255; 255
     Fixed Frame: map
     Frame Rate: 30
   Name: root
@@ -432,16 +317,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 22.383563995361328
+      Distance: 22.083642959594727
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.13085541129112244
-        Y: 0.6872439980506897
-        Z: -0.353485643863678
+        X: 1.4511736631393433
+        Y: 1.1837518215179443
+        Z: -0.35299068689346313
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -450,7 +335,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 4.713379859924316
+      Yaw: 4.70837926864624
     Saved: ~
 Window Geometry:
   Displays:
