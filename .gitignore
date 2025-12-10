@@ -48,3 +48,6 @@ log/
 # planning env
 *.ply
 *.pcd
+
+# ide
+.vscode/
