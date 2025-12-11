@@ -23,17 +23,53 @@ def generate_launch_description():
         [
             essential_launch,
             Node(
-                package="find_nearest",
-                executable="find_nearest_node",
-                name="find_nearest",
-                output="screen"
-            ),
-            Node(
                 package='rviz2',
                 executable='rviz2',
                 name='rviz',
                 output='screen',
                 arguments=['-d', rviz_config_file]
+            ),
+            Node(
+                package='dev_hpp',
+                executable='no_predicted_local_planner_node',
+                name='local_planner',
+                output='screen',
+                parameters=[{
+                    'global_eps': 4.0,
+                    'local_eps': 2.0,
+                    'local_min_points': 2,
+                    'global_min_points': 5,
+                    'max_range': 20.0,
+                    'replan_threshold': 1.0,
+                    'time_threshold': 1.5,
+                    'frontier_detection_range': -1.0,
+                    'global_planning_failure_threshold': 1,
+                    'local_cluster_size': 12,
+                    'global_cluster_size': 30,
+                    'direction_change_penalty': 0.0,
+                    'predicted_confidence_multiplier': 0.6
+                }]
+            ),
+            Node(
+                package='local_planner',
+                executable='path_selector_node',
+                name='path_selector',
+                output='screen',
+                parameters=[{
+                    'robot_name':'av1',
+                    'height': 1.25,
+                    'waypoint_tolerance': 0.2,
+                    'direction_change_penalty': 0.0
+                }]
+            ),
+            Node(
+                package='dev_hpp',
+                executable='global_planner_node',
+                name='global_planner',
+                output='screen',
+                parameters=[{
+                    'global_range': 6.0
+                }]
             ),
             Node(
                 package="exp_statistics",
@@ -48,7 +84,7 @@ def generate_launch_description():
                             "simulator",
                             "statistics",
                             "puzzle",
-                            f"find_nearest_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            f"hpp_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                         )
                     }
                 ],
