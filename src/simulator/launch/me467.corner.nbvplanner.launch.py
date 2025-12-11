@@ -16,7 +16,7 @@ def generate_launch_description():
     rviz_config_file = os.path.join(
         simulator_share,
         'rviz',
-        'pcd_nbvplanner.rviz'
+        'bench.rviz'
     )
 
     return LaunchDescription(
